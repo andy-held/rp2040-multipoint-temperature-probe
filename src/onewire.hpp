@@ -10,18 +10,20 @@
 #include <tuple>
 #include <vector>
 
+uint8_t calc_crc8(const uint8_t* data, const size_t size);
+
 class onewire
 {
   public:
     onewire(uint8_t pin, uint8_t pinctlz);
 
-    int reset();
+    int reset() const;
 
     /* Transmit a byte */
-    void transmit(uint8_t byte);
+    void transmit(uint8_t byte) const;
 
     /* Receive a byte */
-    uint8_t receive();
+    uint8_t receive() const;
 
     /*  Transmit a byte and activate strong pullup after
         last bit has been sent.
@@ -31,10 +33,10 @@ class onewire
         activated.
         Either consider this when controlling the strong
         pullup time or wait for idle before taking time. */
-    void transmit_then_pull_up(uint8_t byte);
+    void transmit_then_pull_up(uint8_t byte) const;
 
     /* Reset the strong pullup (set pinctlz to high) */
-    void disable_pull_up();
+    void disable_pull_up() const;
 
     using search_state = std::tuple<uint64_t, int8_t>;
     /**
@@ -48,7 +50,7 @@ class onewire
      *     Initialize with 0.
      * @return new device id, new last discrepancy
      */
-    std::optional<search_state> incremental_search(const search_state& state);
+    std::optional<search_state> incremental_search(const search_state& state) const;
 
     //--------------------------------------------------------------------------
     // Do a general search. Continues from the previous search state.
@@ -60,13 +62,13 @@ class onewire
     //                       last search was the last device or there
     //                       are no devices on the 1-Wire Net.
     //
-    std::vector<uint64_t> search();
+    std::vector<uint64_t> search() const;
 
   private:
-    void set_fifo_thresh(uint thresh);
-    void set_timing(uint usecs);
-    void wait_until_sm_idle();
-    uint8_t transmit_or_receive_bits(const uint8_t bits = 8, const uint8_t data = 0xff);
+    void set_fifo_thresh(uint thresh) const;
+    void set_timing(uint usecs) const;
+    void wait_until_sm_idle() const;
+    uint8_t transmit_or_receive_bits(const uint8_t bits = 8, const uint8_t data = 0xff) const;
 
     pico::Program program;
     uint8_t pin; /* Pin number for 1-Wire data signal */

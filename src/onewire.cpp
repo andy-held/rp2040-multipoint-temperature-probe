@@ -1,6 +1,7 @@
 #include <onewire.hpp>
 
-#include <onewirepio.hpp>
+#include <onewire_pio/onewirepio.hpp>
+#include <onewire_defs.hpp>
 #include <picopp.hpp>
 
 #include <hardware/clocks.h>
@@ -12,8 +13,6 @@
 
 namespace
 {
-constexpr const uint8_t ONEWIRE_SEARCH_COMMAND = 0xf0;
-
 constexpr const int TIMEOUT_RETRIES = 2000;
 constexpr const int CHECKSUM_RETRIES = 10;
 
@@ -22,6 +21,7 @@ const pico::ProgramInstructions &get_onewire_instructions()
     static const pico::ProgramInstructions onewire_instructions(&onewire_program);
     return onewire_instructions;
 }
+}// namespace
 
 uint8_t calc_crc8(const uint8_t* data, const size_t size)
 {
@@ -41,7 +41,6 @@ uint8_t calc_crc8(const uint8_t* data, const size_t size)
 
     return crc8;
 }
-}// namespace
 
 onewire::onewire(uint8_t pin_in, uint8_t pinctlz_in)
     : program(get_onewire_instructions()), pin(pin_in), pinctlz(pinctlz_in)
@@ -86,7 +85,7 @@ onewire::onewire(uint8_t pin_in, uint8_t pinctlz_in)
     pio_sm_set_enabled(pio, state_machine, true);
 }
 
-void onewire::set_fifo_thresh(uint thresh)
+void onewire::set_fifo_thresh(uint thresh) const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -132,7 +131,7 @@ void onewire::set_fifo_thresh(uint thresh)
     }
 }
 
-int onewire::reset()
+int onewire::reset() const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -160,7 +159,7 @@ int onewire::reset()
     return ret;// 1=detected, 0=not
 }
 
-void onewire::set_timing(uint usecs)
+void onewire::set_timing(uint usecs) const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -173,7 +172,7 @@ void onewire::set_timing(uint usecs)
 /* Wait for idle state to be reached. This is only
    useful when you know that all but the last bit
    have been processed (after having checked fifos) */
-void onewire::wait_until_sm_idle()
+void onewire::wait_until_sm_idle() const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -192,7 +191,7 @@ void onewire::wait_until_sm_idle()
     }
 }
 
-uint8_t onewire::transmit_or_receive_bits(const uint8_t bits, const uint8_t data)
+uint8_t onewire::transmit_or_receive_bits(const uint8_t bits, const uint8_t data) const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -205,17 +204,17 @@ uint8_t onewire::transmit_or_receive_bits(const uint8_t bits, const uint8_t data
     return (pio_sm_get(pio, state_machine) >> (32-bits)) & 0xff;
 }
 
-void onewire::transmit(uint8_t byte)
+void onewire::transmit(uint8_t byte) const
 {
     transmit_or_receive_bits(8, byte);
 }
 
-uint8_t onewire::receive()
+uint8_t onewire::receive() const
 {
     return transmit_or_receive_bits();
 }
 
-void onewire::transmit_then_pull_up(uint8_t byte)
+void onewire::transmit_then_pull_up(uint8_t byte) const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -230,7 +229,7 @@ void onewire::transmit_then_pull_up(uint8_t byte)
     pio_sm_get(pio, state_machine); /* read to drain RX fifo */
 }
 
-void onewire::disable_pull_up()
+void onewire::disable_pull_up() const
 {
     auto pio = program.instructions.pio;
     auto state_machine = program.state_machine_id;
@@ -241,7 +240,7 @@ void onewire::disable_pull_up()
     pio_sm_exec(pio, state_machine, pio_encode_set(pio_pins, 1));
 }
 
-std::optional<onewire::search_state> onewire::incremental_search(const onewire::search_state& state)
+std::optional<onewire::search_state> onewire::incremental_search(const onewire::search_state& state) const
 {
 
     const auto [last_device_id, most_significant_discrepancy] = state;
@@ -295,7 +294,7 @@ std::optional<onewire::search_state> onewire::incremental_search(const onewire::
     return {search_state{device_id, discrepancy}};
 }
 
-std::vector<uint64_t> onewire::search()
+std::vector<uint64_t> onewire::search() const
 {
     std::vector<uint64_t> device_ids;
 
