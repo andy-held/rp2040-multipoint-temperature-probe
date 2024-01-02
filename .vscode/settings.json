@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "onewire.pio.h": "c"
+    }
+}

@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/out/install/unixlike-debug/bin/picomultipointtemp.elf",
+            "name": "Pico Debug",
+            "request": "launch",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "parsed",
+            "servertype": "openocd",
+            "device": "RP2040_M0_0",
+            "interface": "swd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/rp2040.cfg"
+            ],
+            "gdbPath": "gdb-multiarch",
+            "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+            "postRestartCommands": ["load","b main","c"],
+        },
+        {
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/out/install/unixlike-release/bin/picomultipointtemp.elf",
+            "name": "Pico Release",
+            "request": "launch",
+            "type": "cortex-debug",
+            "showDevDebugOutput": "parsed",
+            "servertype": "openocd",
+            "device": "RP2040_M0_0",
+            "interface": "swd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/rp2040.cfg"
+            ],
+            "gdbPath": "gdb-multiarch",
+            "svdFile": "${env:PICO_SDK_PATH}/src/rp2040/hardware_regs/rp2040.svd",
+            "postRestartCommands": ["load","b main","c"],
+        }
+    ]
+}
