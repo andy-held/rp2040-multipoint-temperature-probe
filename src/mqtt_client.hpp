@@ -21,7 +21,7 @@ void init_wifi(const char *ssid, const char *pass, uint32_t country, uint32_t au
 
 struct mqtt_client
 {
-    mqtt_client(const char* hostname, const uint32_t port, const char* user = nullptr, const char* pass = nullptr);
+    mqtt_client(const char* hostname, const uint32_t port, const char* client_id, const char* user = nullptr, const char* pass = nullptr);
 
     void publish(const char* topic, const void* data, uint32_t data_len);
 

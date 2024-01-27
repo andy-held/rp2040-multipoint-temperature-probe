@@ -56,7 +56,7 @@ ip_addr_t run_dns_lookup(const char* hostname)
     return ip;
 }
 
-mqtt_client::mqtt_client(const char* hostname, const uint32_t port, const char* user, const char* pass)
+mqtt_client::mqtt_client(const char* hostname, const uint32_t port, const char* client_id, const char* user, const char* pass)
 {
     remote_addr = run_dns_lookup(hostname);
 
@@ -66,7 +66,7 @@ mqtt_client::mqtt_client(const char* hostname, const uint32_t port, const char* 
 
     memset(&ci, 0, sizeof(ci));
 
-    ci.client_id = "PicoW";
+    ci.client_id = client_id;
     ci.client_user = user;
     ci.client_pass = pass;
     ci.keep_alive = 0;

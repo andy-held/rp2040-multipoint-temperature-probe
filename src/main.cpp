@@ -11,12 +11,14 @@
 #include <stdio.h>
 #include <string_view>
 
-constexpr const char* ssid = "";
-constexpr const char* pass = "";
-constexpr const char* hostname = "";
-constexpr const uint32_t port = 1883;
-constexpr const std::string_view topic_prefix = "temperature_";
+constexpr const char* wifi_ssid = "";
+constexpr const char* wifi_password = "";
+constexpr const char* mqtt_hostname = "";
+constexpr const uint32_t mqtt_port = 1883;
+constexpr const char* mqtt_user = "";
 constexpr const char* mqtt_pass = "";
+constexpr const char* mqtt_client_id = "picoW";
+constexpr const std::string_view topic_prefix = "temperature_";
 
 int main()
 {
@@ -25,9 +27,9 @@ int main()
     stdio_init_all();
     printf("Start multi-point temperature probe\n");
 
-    init_wifi(ssid, pass, CYW43_COUNTRY_GERMANY);
+    init_wifi(wifi_ssid, wifi_password, CYW43_COUNTRY_GERMANY);
 
-    auto client = mqtt_client(hostname, port, nullptr, pass);
+    auto client = mqtt_client(mqtt_hostname, mqtt_port, mqtt_client_id, mqtt_user, mqtt_pass);
 
     std::array<onewire, 2> wires
     {
