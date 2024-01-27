@@ -18,14 +18,14 @@ constexpr const uint32_t mqtt_port = 1883;
 constexpr const char* mqtt_user = "";
 constexpr const char* mqtt_pass = "";
 constexpr const char* mqtt_client_id = "picoW";
-constexpr const std::string_view topic_prefix = "temperature_";
+constexpr const std::string_view topic_prefix = "picoW/temperature/";
 
 int main()
 {
     bi_decl(bi_program_description("This is a multi-point temperature probe"));
 
     stdio_init_all();
-    printf("Start multi-point temperature probe\n");
+    printf("Start multi-point temperature probe %s\n", mqtt_client_id);
 
     init_wifi(wifi_ssid, wifi_password, CYW43_COUNTRY_GERMANY);
 
