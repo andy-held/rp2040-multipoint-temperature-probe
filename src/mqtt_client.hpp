@@ -6,7 +6,7 @@
 #include <pico/cyw43_arch.h>
 #include <pico/stdlib.h>
 
-#include <lwip/apps/mqtt.h>
+typedef struct mqtt_client_s mqtt_client_t;
 
 template<typename T>
 std::tuple<const void*, uint32_t> get_data_view(const T& data)
@@ -36,6 +36,4 @@ struct mqtt_client
     mqtt_client_t* lwip_mqtt_client;
     uint8_t receiving = 0;
     uint32_t received = 0;
-    uint32_t counter = 0;
-    uint32_t reconnect;
 };

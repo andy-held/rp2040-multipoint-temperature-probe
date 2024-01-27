@@ -1,8 +1,40 @@
 #include <mqtt_client.hpp>
 
 #include <lwip/dns.h>
+#include <lwip/apps/mqtt.h>
 
 #include <stdexcept>
+
+namespace
+{
+struct MQTT_Connection_Status
+{
+    int status = -1;
+
+    explicit operator std::string_view() const
+    {
+        switch(status)
+        {
+        case MQTT_CONNECT_ACCEPTED:
+            return "Connected";
+        case MQTT_CONNECT_REFUSED_PROTOCOL_VERSION:
+            return "Refused protocol version";
+        case MQTT_CONNECT_REFUSED_IDENTIFIER:
+            return "Refused identifier";
+        case MQTT_CONNECT_REFUSED_SERVER:
+            return "Refused server";
+        case MQTT_CONNECT_REFUSED_USERNAME_PASS:
+            return "Refused username/password";
+        case MQTT_CONNECT_REFUSED_NOT_AUTHORIZED_:
+            return "Refused not authorized";
+        case MQTT_CONNECT_DISCONNECTED:
+            return "Disconnected";
+        case MQTT_CONNECT_TIMEOUT:
+            return "Timeout";
+        }
+    }
+};
+}
 
 template<>
 std::tuple<const void*, uint32_t> get_data_view<std::string>(const std::string& data)
@@ -42,7 +74,7 @@ ip_addr_t run_dns_lookup(const char* hostname)
 
     if (err == ERR_ARG)
     {
-        std::runtime_error("DNS lookup failed.");
+        throw std::runtime_error("DNS lookup failed.");
     }
 
     if (err == ERR_INPROGRESS)
@@ -72,28 +104,31 @@ mqtt_client::mqtt_client(const char* hostname, const uint32_t port, const char* 
     ci.keep_alive = 0;
     ci.will_topic = NULL;
 
-    auto connection_cb = [](mqtt_client_t* /*client*/, void* /*arg*/, mqtt_connection_status_t status)
+    auto connection_cb = [](mqtt_client_t* /*client*/, void* arg, mqtt_connection_status_t status)
     {
-        if (status != 0)
-        {
-            printf("Error during connection: err %d.\n", status);
-        } else
-        {
-            printf("MQTT connected.\n");
-        }
+        MQTT_Connection_Status* connection_status = reinterpret_cast<MQTT_Connection_Status*>(arg);
+        connection_status->status = status;
     };
 
-    err = mqtt_client_connect(lwip_mqtt_client, &remote_addr, port, connection_cb, nullptr, &ci);
+    MQTT_Connection_Status connection_status;
+    err = mqtt_client_connect(lwip_mqtt_client, &remote_addr, port, connection_cb, &connection_status, &ci);
 
     if (err != ERR_OK)
     {
-        std::runtime_error(std::string("mqtt_connect return ") + std::to_string(err) + "\n");
+        throw std::runtime_error(std::string("mqtt_connect returned ") + std::to_string(err));
     }
 
     while(!mqtt_client_is_connected(lwip_mqtt_client))
     {
+        if(connection_status.status > 0)
+        {
+            throw std::runtime_error(std::string("MQTT connection failed: ") + std::string(std::string_view(connection_status)));
+        }
         sleep_ms(5);
     }
+
+
+    printf("MQTT connected.\n");
 }
 
 void mqtt_client::publish(const char* topic, const void *data, uint32_t data_len)
