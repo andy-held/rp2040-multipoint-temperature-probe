@@ -40,6 +40,13 @@ struct MQTT_Publish_Status
     err_t error = 0;
     bool published = false;
 };
+
+struct DNS_Query_Status
+{
+    ip_addr_t ip;
+    bool resolved = false;
+    bool failed = false;
+};
 }
 
 template<>
@@ -71,31 +78,38 @@ ip_addr_t run_dns_lookup(const char* hostname)
 
     auto dns_gethostbyname_cb = [](const char* /*name*/, const ip_addr_t *ipaddr, void *callback_arg)
     {
-        auto& ip = *static_cast<ip_addr_t*>(callback_arg);
-        printf("DNS query finished with resolved addr of %s.\n", ip4addr_ntoa(ipaddr));
-        ip = *ipaddr;
+        auto& query_status = *static_cast<DNS_Query_Status*>(callback_arg);
+        query_status.resolved = true;
+        if(ipaddr)
+        {
+            query_status.ip = *ipaddr;
+        }
+        else
+        {
+            query_status.failed = true;
+        }
     };
 
-    ip_addr_t ip;
-    ip.addr = 0;
+    DNS_Query_Status query_status;
     cyw43_arch_lwip_begin();
-    err_t err = dns_gethostbyname(hostname, &ip, dns_gethostbyname_cb, &ip);
+    err_t err = dns_gethostbyname(hostname, &query_status.ip, dns_gethostbyname_cb, &query_status);
     cyw43_arch_lwip_end();
-
-    if (err == ERR_ARG)
-    {
-        throw std::runtime_error("DNS lookup failed.");
-    }
 
     if (err == ERR_INPROGRESS)
     {
-        while (ip.addr == 0) // wait until the callback was called
+        while (!query_status.resolved) // wait until the callback was called
         {
             sleep_ms(5);
         }
     }
-    printf("Resolved ip %lu err code %d\n", (unsigned long)ip.addr, err);
-    return ip;
+
+    if (err == ERR_ARG || query_status.failed)
+    {
+        throw std::runtime_error("DNS lookup failed.");
+    }
+
+    printf("DNS query finished with resolved addr of %s.\n", ip4addr_ntoa(&query_status.ip));
+    return query_status.ip;
 }
 
 mqtt_client::mqtt_client(const char* hostname, const uint32_t port, const char* client_id, const char* user, const char* pass)
