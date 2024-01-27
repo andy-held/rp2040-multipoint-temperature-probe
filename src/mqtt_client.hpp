@@ -34,6 +34,4 @@ struct mqtt_client
 
     ip_addr_t remote_addr;
     mqtt_client_t* lwip_mqtt_client;
-    uint8_t receiving = 0;
-    uint32_t received = 0;
 };

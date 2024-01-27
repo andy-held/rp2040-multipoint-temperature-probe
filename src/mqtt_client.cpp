@@ -34,6 +34,12 @@ struct MQTT_Connection_Status
         }
     }
 };
+
+struct MQTT_Publish_Status
+{
+    err_t error = 0;
+    bool published = false;
+};
 }
 
 template<>
@@ -135,22 +141,27 @@ void mqtt_client::publish(const char* topic, const void *data, uint32_t data_len
 {
     auto pub_request_cb = [](void *callback_arg, err_t err)
     {
-        auto client = *static_cast<mqtt_client *>(callback_arg);
-        client.receiving = 0;
-        client.received++;
-        if(err != ERR_OK)
-        {
-            printf("pub_request_cb: err %d\n", err);
-        }
+        auto& status = *static_cast<MQTT_Publish_Status*>(callback_arg);
+        status.published = true;
+        status.error = err;
     };
     constexpr const u8_t qos = 2; /* 0 1 or 2, see MQTT specification */
     constexpr const u8_t retain = 0;
     cyw43_arch_lwip_begin();
-    receiving = 1;
-    auto err = mqtt_publish(lwip_mqtt_client, topic, data, data_len, qos, retain, pub_request_cb, this);
+    MQTT_Publish_Status status;
+    auto err = mqtt_publish(lwip_mqtt_client, topic, data, data_len, qos, retain, pub_request_cb, &status);
     cyw43_arch_lwip_end();
     if (err != ERR_OK)
     {
-        printf("Publish err: %d\n", err);
+        printf("MQTT calling publish returned error: %d\n", err);
+    }
+
+    while(!status.published)
+    {
+        sleep_ms(5);
+    }
+    if(status.error != ERR_OK)
+    {
+        printf("MQTT publish failed: %d\n", status.error);
     }
 }
