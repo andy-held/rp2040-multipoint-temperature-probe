@@ -9,6 +9,7 @@
 #include <array>
 #include <bitset>
 #include <stdio.h>
+#include <stdexcept>
 #include <string_view>
 
 constexpr const char* wifi_ssid = "";
@@ -27,9 +28,38 @@ int main()
     stdio_init_all();
     printf("Start multi-point temperature probe %s\n", mqtt_client_id);
 
-    init_wifi(wifi_ssid, wifi_password, CYW43_COUNTRY_GERMANY);
+    init_wifi(CYW43_COUNTRY_GERMANY);
+    while(true)
+    {
+        try
+        {
+            connect_wifi(wifi_ssid, wifi_password);
+            break;
+        } catch (std::runtime_error& err)
+        {
+            printf("WIFI connection could not be established: %s \n", err.what());
+            printf("Retrying in 10 seconds\n");
+            sleep_ms(10000);
+        }
+    }
 
-    auto client = mqtt_client(mqtt_hostname, mqtt_port, mqtt_client_id, mqtt_user, mqtt_pass);
+    auto try_creating_client = []()
+    {
+        while (true)
+        {
+            try
+            {
+                return mqtt_client(mqtt_hostname, mqtt_port, mqtt_client_id, mqtt_user, mqtt_pass);
+            } catch (std::runtime_error& err)
+            {
+                printf("MQTT connection could not be established %s \n", err.what());
+                printf("Retrying in 10 seconds\n");
+                sleep_ms(10000);
+            }
+        }
+    };
+
+    auto client = try_creating_client();
 
     std::array<onewire, 2> wires
     {

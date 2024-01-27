@@ -48,13 +48,17 @@ std::tuple<const void*, uint32_t> get_data_view<std::string>(const std::string& 
     return {static_cast<const void*>(data.data()), sizeof(data.length())};
 }
 
-void init_wifi(const char *ssid, const char *pass, uint32_t country, uint32_t auth, const uint32_t timeout)
+void init_wifi(uint32_t country)
 {
     if (cyw43_arch_init_with_country(country))
     {
         throw std::runtime_error("Could not init to Wifi");
     }
     cyw43_arch_enable_sta_mode();
+}
+
+void connect_wifi(const char *ssid, const char *pass, uint32_t auth, const uint32_t timeout)
+{
     if (cyw43_arch_wifi_connect_timeout_ms(ssid, pass, auth, timeout))
     {
         throw std::runtime_error("Wifi connection timed out");
